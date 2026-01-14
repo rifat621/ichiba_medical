@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-// GET /api/service-reports/[id] - Get service report by ID
+// ✅ GET /api/service-reports/[id] - Get service report by ID
 export async function GET(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -44,7 +44,7 @@ export async function GET(
       );
     }
 
-    // Format response
+    // ✅ Format response
     const formattedReport = {
       id: serviceReport.id,
       hospitalName: serviceReport.hospital.name,
@@ -60,6 +60,44 @@ export async function GET(
     return NextResponse.json({ ok: true, report: formattedReport });
   } catch (error) {
     console.error("Get service report error:", error);
+    return NextResponse.json(
+      { ok: false, message: "Internal server error" },
+      { status: 500 }
+    );
+  }
+}
+
+// ✅ DELETE /api/service-reports/[id] - Delete service report by ID
+export async function DELETE(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+
+    // ✅ cek dulu apakah datanya ada
+    const exists = await prisma.serviceReport.findUnique({
+      where: { id },
+      select: { id: true },
+    });
+
+    if (!exists) {
+      return NextResponse.json(
+        { ok: false, message: "Service report not found" },
+        { status: 404 }
+      );
+    }
+
+    await prisma.serviceReport.delete({
+      where: { id },
+    });
+
+    return NextResponse.json({
+      ok: true,
+      message: "Service report deleted successfully",
+    });
+  } catch (error) {
+    console.error("Delete service report error:", error);
     return NextResponse.json(
       { ok: false, message: "Internal server error" },
       { status: 500 }

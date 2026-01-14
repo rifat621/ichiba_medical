@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState, useEffect } from "react";
-import { Menu, Search, Eye } from "lucide-react";
+import { Menu, Search, Eye, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import AdminSidebar from "@/components/AdminSidebar";
 
@@ -11,7 +11,7 @@ type Report = {
   instrumentType: string;
   activityDate: string; // YYYY-MM-DD
   status: string;
-  createdAt: string; // ISO / text
+  createdAt: string; // formatted text
 };
 
 type ApiReport = {
@@ -34,7 +34,8 @@ export default function AdminServiceReportPage() {
     async function fetchReports() {
       try {
         const res = await fetch("/api/service-reports");
-        const data = await res.json() as { ok: boolean; reports?: ApiReport[] };
+        const data = (await res.json()) as { ok: boolean; reports?: ApiReport[] };
+
         if (data.ok && data.reports) {
           setReports(
             data.reports.map((r: ApiReport): Report => ({
@@ -59,12 +60,14 @@ export default function AdminServiceReportPage() {
         setLoading(false);
       }
     }
+
     fetchReports();
   }, []);
 
   const filtered = useMemo(() => {
     const key = q.trim().toLowerCase();
     if (!key) return reports;
+
     return reports.filter((r) => {
       return (
         r.hospitalName.toLowerCase().includes(key) ||
@@ -74,6 +77,31 @@ export default function AdminServiceReportPage() {
       );
     });
   }, [q, reports]);
+
+  async function handleDelete(id: string) {
+    const ok = confirm("Are you sure you want to delete this report?");
+    if (!ok) return;
+
+    try {
+      const res = await fetch(`/api/service-reports/${id}`, {
+        method: "DELETE",
+      });
+
+      const data = (await res.json()) as { ok?: boolean; message?: string };
+
+      if (!res.ok) {
+        alert(data?.message || "Failed to delete report.");
+        return;
+      }
+
+      // ✅ update UI
+      setReports((prev) => prev.filter((r) => r.id !== id));
+      alert("Report deleted successfully.");
+    } catch (err) {
+      console.error("Delete report error:", err);
+      alert("Something went wrong while deleting.");
+    }
+  }
 
   return (
     <main className="min-h-screen bg-white">
@@ -94,7 +122,7 @@ export default function AdminServiceReportPage() {
           SERVICE REPORT
         </h1>
         <p className="mt-1 text-sm font-semibold text-slate-500">
-          Admin can only view submitted reports (read-only).
+          Admin can view and delete submitted reports.
         </p>
 
         {/* search */}
@@ -110,13 +138,13 @@ export default function AdminServiceReportPage() {
 
         {/* table */}
         <section className="mt-6 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-xl">
-          <div className="grid grid-cols-[1.1fr_2.2fr_1.6fr_1.2fr_1.2fr_.6fr] bg-slate-100 px-6 py-4 text-xs font-extrabold text-slate-900">
+          <div className="grid grid-cols-[1.1fr_2.2fr_1.6fr_1.2fr_1.2fr_.8fr] bg-slate-100 px-6 py-4 text-xs font-extrabold text-slate-900">
             <div>REPORT ID</div>
             <div>HOSPITAL</div>
             <div>INSTRUMENT</div>
             <div>ACTIVITY DATE</div>
             <div>STATUS</div>
-            <div className="text-center">VIEW</div>
+            <div className="text-center">ACTIONS</div>
           </div>
 
           <div className="divide-y divide-slate-200">
@@ -132,7 +160,7 @@ export default function AdminServiceReportPage() {
               filtered.map((r) => (
                 <div
                   key={r.id}
-                  className="grid grid-cols-[1.1fr_2.2fr_1.6fr_1.2fr_1.2fr_.6fr] items-center px-6 py-4"
+                  className="grid grid-cols-[1.1fr_2.2fr_1.6fr_1.2fr_1.2fr_.8fr] items-center px-6 py-4"
                 >
                   <div className="text-sm font-extrabold text-slate-900">
                     {r.id}
@@ -157,7 +185,8 @@ export default function AdminServiceReportPage() {
                     {r.status}
                   </div>
 
-                  <div className="flex justify-center">
+                  {/* ✅ actions: eye + trash */}
+                  <div className="flex justify-center gap-2">
                     <button
                       type="button"
                       onClick={() => router.push(`/admin/service-report/${r.id}`)}
@@ -166,6 +195,16 @@ export default function AdminServiceReportPage() {
                       aria-label="View"
                     >
                       <Eye className="text-teal-700" size={20} />
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => handleDelete(r.id)}
+                      className="grid h-10 w-10 place-items-center rounded-xl hover:bg-slate-100"
+                      title="Delete report"
+                      aria-label="Delete"
+                    >
+                      <Trash2 className="text-red-600" size={20} />
                     </button>
                   </div>
                 </div>

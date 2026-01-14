@@ -129,7 +129,7 @@ export default function LoginPage() {
               Contact administrator if you need an account.
             </div>
             <div className="mt-2 opacity-70">
-              Seed admin kamu sekarang: <b>superadminichiba</b> / <b>admin123</b>
+              Seed admin kamu sekarang: <b>admin</b> / <b>admin123</b>
             </div>
           </div>
 
