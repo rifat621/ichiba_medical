@@ -43,7 +43,7 @@ export default function ServiceReportFormPage() {
   const [fault, setFault] = useState("");
   const [analysis, setAnalysis] = useState("");
 
-  function handleSave() {
+  async function handleSave() {
     if (
       !selectedInstrument ||
       !activityDate ||
@@ -55,19 +55,35 @@ export default function ServiceReportFormPage() {
       return;
     }
 
-    const payload = {
-      hospital: hospitalName,
-      instrument: selectedInstrument,
-      activityDate,
-      fault,
-      analysis,
-      status: selectedStatus,
-    };
+    try {
+      const res = await fetch("/api/service-reports", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          hospitalName,
+          instrument: selectedInstrument,
+          activityDate,
+          fault,
+          analysis,
+          status: selectedStatus,
+        }),
+      });
 
-    console.log("SERVICE REPORT DATA:", payload);
-    alert("Service report saved successfully (demo).");
+      const data = await res.json();
 
-    router.push("/service-report");
+      if (!data.ok) {
+        alert(data.message || "Failed to save service report");
+        return;
+      }
+
+      alert("Service report saved successfully!");
+      router.push("/service-report");
+    } catch (error) {
+      console.error("Save service report error:", error);
+      alert("An error occurred. Please try again.");
+    }
   }
 
   return (

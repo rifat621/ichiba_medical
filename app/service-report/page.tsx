@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { Menu, Search, ChevronDown, ChevronUp } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
@@ -14,12 +14,25 @@ export default function ServiceReportPage() {
   const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  // 🔹 Sample hospital data
-  const hospitals: Hospital[] = [
-    { id: "1", name: "RUMAH SAKIT UNIVERSITAS HASANUDDIN" },
-    { id: "2", name: "RUMAH SAKIT STELLA MARIS" },
-    { id: "3", name: "RUMAH SAKIT DR. WAHIDIN SUDIROHUSODO" },
-  ];
+  const [hospitals, setHospitals] = useState<Hospital[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchHospitals() {
+      try {
+        const res = await fetch("/api/hospitals");
+        const data = await res.json();
+        if (data.ok) {
+          setHospitals(data.hospitals.map((h: any) => ({ id: h.id, name: h.name })));
+        }
+      } catch (error) {
+        console.error("Fetch hospitals error:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchHospitals();
+  }, []);
 
   const [query, setQuery] = useState("");
   const [showList, setShowList] = useState(false);
@@ -101,7 +114,11 @@ export default function ServiceReportPage() {
                   </div>
 
                   <div className="px-6 pb-8 space-y-3">
-                    {filteredHospitals.length === 0 ? (
+                    {loading ? (
+                      <div className="rounded-xl bg-teal-700/40 px-4 py-4 text-sm font-semibold text-white">
+                        Loading...
+                      </div>
+                    ) : filteredHospitals.length === 0 ? (
                       <div className="rounded-xl bg-teal-700/40 px-4 py-4 text-sm font-semibold text-white">
                         No hospital found.
                       </div>

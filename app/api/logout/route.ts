@@ -9,5 +9,17 @@ export async function POST() {
     expires: new Date(0),
   });
 
+  res.cookies.set("role", "", {
+    httpOnly: true,
+    path: "/",
+    expires: new Date(0),
+  });
+
+  res.cookies.set("userId", "", {
+    httpOnly: true,
+    path: "/",
+    expires: new Date(0),
+  });
+
   return res;
 }

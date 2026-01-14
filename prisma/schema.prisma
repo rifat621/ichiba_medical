@@ -3,14 +3,18 @@ generator client {
 }
 
 datasource db {
-  provider = "mysql"
-  url      = env("DATABASE_URL")
+  provider = "sqlite"
+  url      = "file:./dev.db"
 }
 
+// Untuk menggunakan MySQL, uncomment di bawah dan comment yang di atas:
+// datasource db {
+//   provider = "mysql"
+//   url      = env("DATABASE_URL")
+// }
+
 enum UserRole {
-  SUPER_ADMIN
   ADMIN
-  TECHNICIAN
   STAFF
 }
 
@@ -19,8 +23,54 @@ model User {
   name      String
   username  String   @unique
   password  String
-  role      UserRole @default(TECHNICIAN)
+  role      UserRole @default(STAFF)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  serviceReports ServiceReport[]
+}
+
+model Hospital {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  address   String?
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  instruments     Instrument[]
+  serviceReports  ServiceReport[]
+}
+
+model Instrument {
+  id          String   @id @default(cuid())
+  name        String
+  serialNumber String
+  type        String
+  hospitalId  String
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  hospital       Hospital        @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+  serviceReports ServiceReport[]
+}
+
+model ServiceReport {
+  id            String   @id @default(cuid())
+  hospitalId    String
+  instrumentId  String
+  userId        String
+  activityDate  DateTime
+  fault         String
+  analysis      String
+  status        String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  hospital   Hospital   @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+  instrument Instrument @relation(fields: [instrumentId], references: [id], onDelete: Cascade)
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

@@ -1,32 +1,38 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-export function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
+export function middleware(req: NextRequest) {
+  const { pathname } = req.nextUrl;
 
-  // ✅ Bebaskan login, api, next assets
-  if (
-    pathname.startsWith("/login") ||
-    pathname.startsWith("/api") ||
-    pathname.startsWith("/_next") ||
-    pathname === "/favicon.ico"
-  ) {
+  // ✅ Jangan ganggu endpoint API
+  if (pathname.startsWith("/api")) {
     return NextResponse.next();
   }
 
-  // ✅ Cek cookie auth
-  const auth = request.cookies.get("auth")?.value;
+  const auth = req.cookies.get("auth")?.value;
+  const role = req.cookies.get("role")?.value;
 
-  // ❌ Belum login → ke /login
-  if (!auth) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/login";
-    return NextResponse.redirect(url);
+  const isLoggedIn = auth === "1";
+
+  // halaman yang bebas akses
+  const publicPaths = ["/login"];
+  const isPublic = publicPaths.some((p) => pathname.startsWith(p));
+
+  if (!isLoggedIn && !isPublic) {
+    return NextResponse.redirect(new URL("/login", req.url));
+  }
+
+  // admin route hanya boleh role admin
+  if (pathname.startsWith("/admin")) {
+    if (role !== "admin") {
+      return NextResponse.redirect(new URL("/", req.url));
+    }
   }
 
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image).*)"],
+  // ✅ exclude api juga
+  matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
 };
